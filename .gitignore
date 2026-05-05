@@ -1,0 +1,23 @@
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+
+**/__pycache__/
+*.pyc
+backend/db.sqlite3
+backend/.env
+venv/
+env/
+
+frontend/node_modules/
+frontend/dist/
+frontend/.eslintcache
+frontend/package-lock.json (opcional: alguns preferem manter, mas muitos ignoram se usarem yarn)
+
+*.log
+.DS_Store
+Thumbs.db
