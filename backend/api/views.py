@@ -1,10 +1,12 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
 from .models import ClientProfile
+from rest_framework.parsers import MultiPartParser
+from .serializers import ClientProfileSerializer
 
 
 @api_view(['POST'])
@@ -23,6 +25,8 @@ def signup(request):
     user = User.objects.create_user(username=username, email=email, password=password)
 
     ClientProfile.objects.create(user=user, plano=plano_escolhido)
+
+    login(request, user)
 
     return Response({'msg': f'Utilizador {user.username} criado com o plano {plano_escolhido}!'}, status=status.HTTP_201_CREATED)
 
@@ -67,3 +71,23 @@ def user_view(request):
         'role': 'Client',
         'plano': plano_atual
     })
+
+@api_view(['GET', 'PUT'])
+@permission_classes([IsAuthenticated])
+@parser_classes([MultiPartParser])
+def profile_view(request):
+    try:
+        profile = ClientProfile.objects.get(user=request.user)
+    except ClientProfile.DoesNotExist:
+        profile = ClientProfile.objects.create(user=request.user)
+
+    if request.method == 'GET':
+        serializer = ClientProfileSerializer(profile)
+        return Response(serializer.data)
+
+    elif request.method == 'PUT':
+        serializer = ClientProfileSerializer(profile, data=request.data)
+        if serializer.is_valid():
+            serializer.save(user=request.user)
+            return Response({'msg': 'Perfil atualizado!'})
+        return Response({'msg': 'Erro ao atualizar'}, status=status.HTTP_400_BAD_REQUEST)

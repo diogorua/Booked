@@ -1,0 +1,35 @@
+:root {
+
+    --dark-brown: #3E2C23;
+    --medium-brown: #6B4F3A;
+    --paper-beige: #F5E6CC;
+    --cream: #FAF3E0;
+    --gold: #ffaa00
+;
+
+}
+
+body {
+    background-color: var(--cream);
+}
+
+.btn-outline-gold {
+  border: 1px solid #ffaa00;
+  color: #ffaa00;
+  background: transparent;
+}
+
+.btn-outline-gold:hover {
+  background: #ffaa00;
+  color: black;
+}
+
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+main {
+  flex: 1;
+}
