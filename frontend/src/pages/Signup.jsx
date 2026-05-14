@@ -8,11 +8,11 @@ const USER_URL = 'http://localhost:8000/booked/api/user/';
 
 const Signup = () => {
     const [username, setUsername] = useState('');
-    const [email, setEmail]       = useState('');
+    const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [plano, setPlano]       = useState('Base');
-    const [erro, setErro]         = useState('');
-    const navigate                = useNavigate();
+    const [plano, setPlano] = useState('Base');
+    const [erro, setErro] = useState('');
+    const navigate= useNavigate();
     const { setUser } = useUserContext();
 
     const handleSubmit = (e) => {
