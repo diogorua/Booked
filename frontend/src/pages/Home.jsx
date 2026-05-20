@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { useUserContext } from "../context/UserProvider";
+import { useNavigate } from "react-router-dom";
 
 const BASE_URL = "http://localhost:8000/booked/api";
 
@@ -13,23 +14,43 @@ const getCSRFToken = () => {
 export default function Home() {
     const [livros, setLivros] = useState([]);
     const { user } = useUserContext();
+    const navigate = useNavigate();
     const [categorias, setCategorias] = useState([]);
     const [favoritosIds, setFavoritosIds] = useState([]);
     const [pesquisa, setPesquisa] = useState("");
     const [categoriaSelecionada, setCategoriaSelecionada] = useState("");
     const [estadoSelecionado, setEstadoSelecionado] = useState("");
+    const [pagina, setPagina] = useState(1);
+    const [temMais, setTemMais] = useState(false);
+    const [carregando, setCarregando] = useState(false);
 
     useEffect(() => {
-        // Pede a lista de livros ao backend
-        axios.get(`${BASE_URL}/books/`)
-            .then(res => setLivros(res.data))
-            .catch(err => console.error("Erro ao carregar os livros", err));
+        setCarregando(true);
 
-        // Pede a lista de categorias para preencher o dropdown de filtros
-        axios.get(`${BASE_URL}/categories/`)
-            .then(res => setCategorias(res.data))
-            .catch(err => console.error("Erro ao carregar as categorias", err));
-    }, []);
+        const params = new URLSearchParams();
+        params.append('page', pagina);
+        if (pesquisa)            params.append('search', pesquisa);
+        if (categoriaSelecionada) params.append('categoria', categoriaSelecionada);
+        if (estadoSelecionado)   params.append('estado', estadoSelecionado);
+
+        axios.get(`${BASE_URL}/books/?${params.toString()}`, { withCredentials: true })
+            .then(res => {
+                if (pagina === 1) {
+                    setLivros(res.data.results);
+                } else {
+                    setLivros(prev => [...prev, ...res.data.results]);
+                }
+                setTemMais(!!res.data.next);
+
+                if (pagina === 1) {
+                    axios.get(`${BASE_URL}/categories/`)
+                        .then(res => setCategorias(res.data))
+                        .catch(err => console.error("Erro ao carregar as categorias", err));
+                }
+            })
+            .catch(err => console.error("Erro ao carregar os livros", err))
+            .finally(() => setCarregando(false));
+    }, [pagina, pesquisa, categoriaSelecionada, estadoSelecionado]);
 
     useEffect(() => {
         if (user) {
@@ -43,6 +64,10 @@ export default function Home() {
             setFavoritosIds([]);
         }
     }, [user]);
+
+    useEffect(() => {
+        setPagina(1);
+    }, [pesquisa, categoriaSelecionada, estadoSelecionado]);
 
     const toggleFavorito = async (livroId) => {
         if (!user) {
@@ -75,9 +100,7 @@ export default function Home() {
 
         const correspondeEstado = estadoSelecionado === "" || livro.estado_conservacao === estadoSelecionado;
 
-        const meulivro = user ? livro.vendedor_name !== user.username : true;
-
-        return correspondePesquisa && correspondeCategoria && correspondeEstado && meulivro;
+        return correspondePesquisa && correspondeCategoria && correspondeEstado;
     });
 
     const limparFiltros = () => {
@@ -189,18 +212,20 @@ export default function Home() {
                                     )}
                                 </button>
 
-                                {livro.imagem_capa ? (
-                                    <img
-                                        src={livro.imagem_capa}
-                                        className="card-img-top"
-                                        alt={livro.titulo}
-                                        style={{ height: "350px", objectFit: "cover" }}
-                                    />
-                                ) : (
-                                    <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: "350px" }}>
-                                        <span className="text-muted">Sem capa</span>
-                                    </div>
-                                )}
+                                <div style={{ cursor: "pointer" }} onClick={() => navigate(`/livro/${livro.id}`)}>
+                                    {livro.imagem_capa ? (
+                                        <img
+                                            src={livro.imagem_capa}
+                                            className="card-img-top"
+                                            alt={livro.titulo}
+                                            style={{ height: "350px", objectFit: "cover" }}
+                                        />
+                                    ) : (
+                                        <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: "350px" }}>
+                                            <span className="text-muted">Sem capa</span>
+                                        </div>
+                                    )}
+                                </div>
 
                                 <div className="card-body d-flex flex-column" style={{ backgroundColor: "var(--cream)" }}>
                                     <h5 className="card-title fw-bold text-truncate" title={livro.titulo}>{livro.titulo}</h5>
@@ -215,7 +240,12 @@ export default function Home() {
 
                                     <div className="mt-auto d-flex justify-content-between align-items-center">
                                         <h4 className="mb-0 fw-bold" style={{ color: "var(--dark-brown)" }}>{livro.preco}€</h4>
-                                        <button className="btn btn-sm btn-outline-gold">Ver Detalhes</button>
+                                        <button
+                                            className="btn btn-sm btn-outline-gold"
+                                            onClick={() => navigate(`/livro/${livro.id}`)}
+                                        >
+                                            Ver Detalhes
+                                        </button>
                                     </div>
                                 </div>
                             </div>
@@ -228,6 +258,20 @@ export default function Home() {
                     </div>
                 )}
             </div>
+            {temMais && (
+    <div className="text-center mt-5">
+        <button
+            className="btn btn-outline-gold px-5 py-2 fw-medium"
+            onClick={() => setPagina(prev => prev + 1)}
+            disabled={carregando}
+        >
+            {carregando
+                ? <><span className="spinner-border spinner-border-sm me-2" />A carregar...</>
+                : "Carregar mais"
+            }
+        </button>
+    </div>
+)}
         </div>
     );
 }

@@ -1,12 +1,14 @@
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
+from django.db.models import Q
 from rest_framework.decorators import api_view, permission_classes, parser_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
-from .models import ClientProfile, Category, Book
+from .models import ClientProfile, Category, Book, Compra
 from rest_framework.parsers import MultiPartParser, FormParser
-from .serializers import ClientProfileSerializer, CategorySerializer, BookSerializer
+from .serializers import ClientProfileSerializer, CategorySerializer, BookSerializer, CompraSerializer
+from rest_framework.pagination import PageNumberPagination
 
 
 @api_view(['POST'])
@@ -15,6 +17,7 @@ def signup(request):
     email = request.data.get('email')
     password = request.data.get('password')
     plano_escolhido = request.data.get('plano', 'Base')
+    distrito = request.data.get('distrito', '')
 
     if not username or not password:
         return Response({'msg': 'Username e password são obrigatórios'}, status=status.HTTP_400_BAD_REQUEST)
@@ -23,6 +26,7 @@ def signup(request):
         return Response({'msg': 'Este username já existe'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=username, email=email, password=password)
+    ClientProfile.objects.create(user=user, plano=plano_escolhido, distrito=distrito)
 
     ClientProfile.objects.create(user=user, plano=plano_escolhido)
 
@@ -98,23 +102,43 @@ def categories_view(request):
     serializer = CategorySerializer(categories, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET', 'POST'])
 def books_list_view(request):
     if request.method == 'GET':
-        # Lista todos os livros para a Homepage, ordenados por data de publicacao
+        print("Utilizador:", request.user)
         books = Book.objects.all().order_by('-data_publicacao')
-        serializer = BookSerializer(books, many=True)
-        return Response(serializer.data)
+
+        if request.user.is_authenticated:
+            books = books.exclude(vendedor=request.user)
+
+        books = books.filter(vendido=False)
+
+        search = request.query_params.get('search', '')
+        categoria = request.query_params.get('categoria', '')
+        estado = request.query_params.get('estado', '')
+
+        if search:
+            books = books.filter(
+                Q(titulo__icontains=search) | Q(autor__icontains=search)
+            )
+        if categoria:
+            books = books.filter(categoria__id=categoria)
+        if estado:
+            books = books.filter(estado_conservacao=estado)
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 12
+        paginated_books = paginator.paginate_queryset(books, request)
+        serializer = BookSerializer(paginated_books, many=True)
+        return paginator.get_paginated_response(serializer.data)
 
     elif request.method == 'POST':
-        # Apenas utilizadores com login efetuado podem vender livros
         if not request.user.is_authenticated:
             return Response({'detail': 'Login obrigatório'}, status=status.HTTP_401_UNAUTHORIZED)
 
-        # Usamos MultiPartParser para aceitar a imagem da capa
         serializer = BookSerializer(data=request.data)
         if serializer.is_valid():
-            # Guarda o livro associando-o ao utilizador atual
             serializer.save(vendedor=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
@@ -169,3 +193,68 @@ def favoritos_view(request):
                 return Response({"status": "adicionado"})
         except Book.DoesNotExist:
             return Response({"error": "Livro não encontrado"}, status.HTTP_404_NOT_FOUND)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def my_books_view(request):
+    books = Book.objects.filter(vendedor=request.user).order_by('-data_publicacao')
+    serializer = BookSerializer(books, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def public_profile_view(request, username):
+    try:
+        user = User.objects.get(username=username)
+    except User.DoesNotExist:
+        return Response({'error': 'Utilizador não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    imagem = None
+    biografia = ''
+    distrito = ''
+    if hasattr(user, 'clientprofile'):
+        profile = user.clientprofile
+        if profile.imagem:
+            imagem = request.build_absolute_uri(profile.imagem.url)
+        biografia = profile.biografia
+        distrito = profile.distrito
+
+    books = Book.objects.filter(vendedor=user, vendido=False).order_by('-data_publicacao')
+    books_serializer = BookSerializer(books, many=True)
+
+    return Response({
+        'username': user.username,
+        'imagem': imagem,
+        'biografia': biografia,
+        'distrito': distrito,
+        'date_joined': user.date_joined.strftime("%d/%m/%Y"),
+        'livros': books_serializer.data
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def comprar_view(request, pk):
+    try:
+        book = Book.objects.get(pk=pk)
+    except Book.DoesNotExist:
+        return Response({'error': 'Livro não encontrado'}, status=status.HTTP_404_NOT_FOUND)
+
+    if book.vendido:
+        return Response({'error': 'Este livro já foi vendido'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if book.vendedor == request.user:
+        return Response({'error': 'Não podes comprar o teu próprio livro'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Marca o livro como vendido e regista a compra
+    book.vendido = True
+    book.save()
+    Compra.objects.create(comprador=request.user, livro=book)
+
+    return Response({'msg': 'Compra realizada com sucesso!'}, status=status.HTTP_201_CREATED)
+
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def minhas_compras_view(request):
+    compras = Compra.objects.filter(comprador=request.user).order_by('-data_compra')
+    serializer = CompraSerializer(compras, many=True)
+    return Response(serializer.data)

@@ -14,6 +14,8 @@ import Profile from "./pages/Profile";
 import BookForm from "./pages/BookForm.jsx";
 import BookShelf from "./pages//BookShelf.jsx"
 import Favorites from "./pages//Favorites.jsx"
+import BookDetail from "./pages/BookDetail";
+import PublicProfile from "./pages/PublicProfile";
 
 createRoot(document.getElementById('root')).render(
     <UserProvider>
@@ -29,6 +31,8 @@ createRoot(document.getElementById('root')).render(
                     <Route path="/editbook/:id" element={<BookForm />} />
                     <Route path="/bookshelf" element={<BookShelf />} />
                     <Route path="/favorites" element={<Favorites />} />
+                    <Route path="/livro/:id" element={<BookDetail />} />
+                    <Route path="/profile/:username" element={<PublicProfile />} />
 
                 </Routes>
             </main>

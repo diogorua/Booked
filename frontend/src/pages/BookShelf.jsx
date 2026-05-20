@@ -11,6 +11,67 @@ const getCSRFToken = () => {
         ?.split('=')[1];
 }
 
+function ComprasTab() {
+    const [compras, setCompras] = useState([]);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        axios.get(`${BASE_URL}/my-purchases/`, { withCredentials: true })
+            .then(res => setCompras(res.data))
+            .catch(err => console.error("Erro ao carregar compras", err));
+    }, []);
+
+    return (
+        <div>
+            <div className="d-flex justify-content-between align-items-center mb-4">
+                <h5 className="fw-bold text-dark">Os teus livros comprados</h5>
+            </div>
+
+            <div className="row g-4">
+                {compras.length > 0 ? (
+                    compras.map(compra => (
+                        <div className="col-md-4 col-lg-3" key={compra.id}>
+                            <div className="card h-100 shadow-sm border-0">
+                                {compra.livro.imagem_capa ? (
+                                    <img
+                                        src={compra.livro.imagem_capa}
+                                        className="card-img-top"
+                                        alt={compra.livro.titulo}
+                                        style={{ height: "250px", objectFit: "cover" }}
+                                    />
+                                ) : (
+                                    <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: "250px" }}>
+                                        <span className="text-muted small">Sem capa</span>
+                                    </div>
+                                )}
+                                <div className="card-body d-flex flex-column" style={{ backgroundColor: "white" }}>
+                                    <h6 className="card-title fw-bold text-truncate mb-1">{compra.livro.titulo}</h6>
+                                    <p className="text-muted small mb-1">{compra.livro.autor}</p>
+                                    <p className="text-muted small mb-1">{compra.livro.preco}€ • {compra.livro.estado_conservacao}</p>
+                                    <p className="text-muted small mb-3">Comprado em: {compra.data_compra}</p>
+
+                                    <div className="mt-auto">
+                                        <button
+                                            className="btn btn-sm btn-dark w-100 fw-medium"
+                                            onClick={() => navigate(`/livro/${compra.livro.id}`)}
+                                        >
+                                            Ver Detalhes
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    ))
+                ) : (
+                    <div className="col-12 text-center py-5 bg-white shadow-sm rounded">
+                        <p className="text-muted mb-0">Ainda não fizeste nenhuma compra.</p>
+                    </div>
+                )}
+            </div>
+        </div>
+    );
+}
+
 export default function BookShelf() {
     const { user } = useUserContext();
     const navigate = useNavigate();
@@ -36,11 +97,8 @@ export default function BookShelf() {
             return;
         }
 
-        axios.get(`${BASE_URL}/books/`)
-            .then(res => {
-                const filtrados = res.data.filter(livro => livro.vendedor_name === user.username);
-                setMeusLivros(filtrados);
-            })
+        axios.get(`${BASE_URL}/my-books/`, { withCredentials: true })
+            .then(res => setMeusLivros(res.data))
             .catch(err => console.error("Erro ao carregar livros", err));
     }, [user, navigate]);
 
@@ -122,12 +180,7 @@ export default function BookShelf() {
                 </div>
             )}
 
-            {activeTab === 'compras' && (
-                <div className="text-center py-5 bg-white shadow-sm rounded">
-                    <h4 className="text-muted mb-3">As tuas compras</h4>
-                    <p className="text-muted">Por implementar</p>
-                </div>
-            )}
+            {activeTab === 'compras' && <ComprasTab />}
         </div>
     );
 }
