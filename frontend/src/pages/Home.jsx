@@ -69,25 +69,26 @@ export default function Home() {
         setPagina(1);
     }, [pesquisa, categoriaSelecionada, estadoSelecionado]);
 
-    const toggleFavorito = async (livroId) => {
+    const toggleFavorite = (livroId) => {
         if (!user) {
             alert("Precisas de ter sessão iniciada para adicionar aos favoritos!");
             return;
         }
-        try {
-            const res = await axios.post(`${BASE_URL}/favorites/`, { book_id: livroId }, {
-                withCredentials: true,
-                headers: { 'X-CSRFToken': getCSRFToken() }
-            });
 
+        axios.post(`${BASE_URL}/favorites/`, { book_id: livroId }, {
+            withCredentials: true,
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        })
+        .then(res => {
             if (res.data.status === "adicionado") {
                 setFavoritosIds([...favoritosIds, livroId]);
             } else {
                 setFavoritosIds(favoritosIds.filter(id => id !== livroId));
             }
-        } catch (error) {
+        })
+        .catch(error => {
             console.error("Erro ao atualizar favoritos:", error);
-        }
+        });
     };
 
     const livrosFiltrados = livros.filter((livro) => {
@@ -188,6 +189,15 @@ export default function Home() {
                     livrosFiltrados.map((livro) => (
                         <div className="col-md-4 col-lg-3" key={livro.id}>
                             <div className="card h-100 shadow-sm border-0 transition-hover position-relative">
+                                {user && (user.plano === 'Premium' || user.role === 'Admin') && livro.vendedor_top && (
+                                    <span
+                                        className="badge bg-warning text-dark position-absolute shadow-sm"
+                                        style={{ top: "10px", left: "10px", zIndex: 10, fontSize: "0.8rem", padding: "6px 10px" }}
+                                    >
+                                        Vendedor Top
+                                    </span>
+                                )}
+
                                 <button
                                     className="btn btn-light rounded-circle shadow-sm position-absolute d-flex align-items-center justify-content-center"
                                     style={{
@@ -196,7 +206,7 @@ export default function Home() {
                                         color: favoritosIds.includes(livro.id) ? "#dc3545" : "#6c757d",
                                         transition: "transform 0.2s ease-in-out"
                                     }}
-                                    onClick={() => toggleFavorito(livro.id)}
+                                    onClick={() => toggleFavorite(livro.id)}
                                     onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
                                     onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}
                                     onMouseLeave={(e) => e.currentTarget.style.transform = "scale(1)"}
@@ -259,19 +269,19 @@ export default function Home() {
                 )}
             </div>
             {temMais && (
-    <div className="text-center mt-5">
-        <button
-            className="btn btn-outline-gold px-5 py-2 fw-medium"
-            onClick={() => setPagina(prev => prev + 1)}
-            disabled={carregando}
-        >
-            {carregando
-                ? <><span className="spinner-border spinner-border-sm me-2" />A carregar...</>
-                : "Carregar mais"
-            }
-        </button>
-    </div>
-)}
+                <div className="text-center mt-5">
+                    <button
+                        className="btn btn-outline-gold px-5 py-2 fw-medium"
+                        onClick={() => setPagina(prev => prev + 1)}
+                        disabled={carregando}
+                    >
+                        {carregando
+                            ? <><span className="spinner-border spinner-border-sm me-2" />A carregar...</>
+                            : "Carregar mais"
+                        }
+                    </button>
+                </div>
+            )}
         </div>
     );
 }

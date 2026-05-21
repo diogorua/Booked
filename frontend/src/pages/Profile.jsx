@@ -18,7 +18,8 @@ const DISTRITOS = [
 ];
 
 const Profile = () => {
-    const {user} = useUserContext();
+    // Injetado o setUser aqui para atualizar o estado global do site
+    const {user, setUser} = useUserContext();
     const [profile, setProfile] = useState(null);
     const navigate = useNavigate();
 
@@ -28,7 +29,7 @@ const Profile = () => {
     const [biografia, setBiografia] = useState('');
     const [distrito, setDistrito] = useState('');
 
-    const carregarPerfil = () => {
+    const LoadProfile = () => {
         axios.get(PROFILE_URL, {withCredentials: true})
             .then(res => {
                 setProfile(res.data);
@@ -38,8 +39,28 @@ const Profile = () => {
             .catch(err => console.error('Erro ao carregar perfil:', err));
     };
 
+    // --- NOVA FUNÇÃO: EXECUTAR UPGRADE PARA PREMIUM ---
+    const handleUpgrade = () => {
+        axios.put(PROFILE_URL, { plano: 'Premium' }, {
+            withCredentials: true,
+            headers: {'X-CSRFToken': getCSRFToken()}
+        })
+        .then(() => {
+            carregarPerfil();
+            return axios.get('http://localhost:8000/booked/api/user/', { withCredentials: true });
+        })
+        .then(resUser => {
+            setUser(resUser.data);
+            alert("Parabéns! A tua conta foi atualizada para Premium com sucesso! 💎");
+        })
+        .catch(error => {
+            console.error("Erro ao fazer upgrade:", error);
+            alert("Não foi possível processar o upgrade.");
+        });
+    };
+
     useEffect(() => {
-        carregarPerfil();
+        LoadProfile();
     }, []);
 
     if (!user) {
@@ -77,14 +98,14 @@ const Profile = () => {
             setIsEditing(false);
             setImageFile(null);
             setPreviewUrl('');
-            carregarPerfil();
+            LoadProfile();
         } catch (error) {
             console.error("Erro ao atualizar perfil:", error);
             alert("Erro ao atualizar o perfil.");
         }
     };
 
-    const cancelarEdicao = () => {
+    const cancelEdition = () => {
         setIsEditing(false);
         setImageFile(null);
         setPreviewUrl('');
@@ -104,7 +125,6 @@ const Profile = () => {
             </h2>
 
             <div className="row">
-                {/* Coluna esquerda */}
                 <div className="col-md-4 col-lg-3 d-flex flex-column align-items-center mb-5 mb-md-0">
                     <img
                         src={avatarSrc}
@@ -126,6 +146,22 @@ const Profile = () => {
                             {user.username}
                         </h4>
 
+                        <div className="d-flex justify-content-center align-items-center gap-2 mb-3">
+                            {profile?.vendedor_top && <span className="badge bg-warning text-dark">Vendedor Top</span>}
+
+                            {profile?.is_premium_viewer || user?.role === 'Admin' ? (
+                                <div className="text-warning small">
+                                    {"★".repeat(Math.round(profile?.media_estrelas || 0))}
+                                    {"☆".repeat(5 - Math.round(profile?.media_estrelas || 0))}
+                                    <span className="text-muted ms-1">({profile?.total_avaliacoes || 0})</span>
+                                </div>
+                            ) : (
+                                <div className="badge bg-light text-muted border px-2 py-1 small">
+                                    Acesso premium
+                                </div>
+                            )}
+                        </div>
+
                         <span
                             className="badge rounded-pill px-3 py-2 mb-3"
                             style={{
@@ -134,10 +170,10 @@ const Profile = () => {
                                 fontWeight: '500'
                             }}
                         >
-        {user.role === 'Admin'
-            ? 'Administrador'
-            : `Plano ${user.plano}`}
-    </span>
+                            {user.role === 'Admin'
+                                ? 'Administrador'
+                                : `Plano ${user.plano}`}
+                        </span>
 
                         {profile?.distrito && (
                             <div className="text-muted mb-3" style={{fontSize: '0.95rem'}}>
@@ -164,7 +200,6 @@ const Profile = () => {
                     </div>
                 </div>
 
-                {/* Coluna direita */}
                 <div className="col-md-8 col-lg-7 text-start ps-md-3">
 
                     {isEditing ? (
@@ -206,7 +241,7 @@ const Profile = () => {
                                 <div className="d-flex gap-2">
                                     <button type="submit" className="btn btn-dark px-4 fw-medium">Guardar</button>
                                     <button type="button" className="btn btn-light border px-4 fw-medium"
-                                            onClick={cancelarEdicao}>Cancelar
+                                            onClick={cancelEdition}>Cancelar
                                     </button>
                                 </div>
                             </form>
@@ -265,6 +300,45 @@ const Profile = () => {
                             </div>
                         </>
                     )}
+
+                    <div className="mt-5 pt-4 border-top border-secondary border-opacity-25" style={{maxWidth: '600px'}}>
+                        <h5 className="fw-bold mb-4 text-dark">As Minhas Avaliações</h5>
+
+                        {!(profile?.plano === 'Premium' || user?.role === 'Admin') ? (
+                            <div className="p-4 border rounded border-secondary border-opacity-25 bg-light text-center">
+                                <div className="fs-3 mb-2">🔒</div>
+                                <h6 className="fw-bold text-dark mb-2">Acesso Premium</h6>
+                                <p className="text-muted small mb-3">
+                                    Precisas do plano Premium para conseguires ler o feedback escrito detalhado deixado pelos teus compradores.
+                                </p>
+                                <button className="btn btn-sm btn-warning fw-bold px-4 rounded-pill shadow-sm" onClick={handleUpgrade}>
+                                    Fazer Upgrade para Premium
+                                </button>
+                            </div>
+                        ) : (
+                            <div className="d-flex flex-column gap-3">
+                                {profile?.avaliacoes && profile.avaliacoes.length > 0 ? (
+                                    profile.avaliacoes.map((av) => (
+                                        <div key={av.id} className="p-3 border rounded border-secondary border-opacity-10 bg-white shadow-sm">
+                                            <div className="d-flex justify-content-between align-items-center mb-2">
+                                                <span className="fw-bold text-dark" style={{fontSize: '0.9rem'}}>@{av.avaliador_name}</span>
+                                                <span className="text-muted" style={{fontSize: '0.8rem'}}>{av.data_avaliacao}</span>
+                                            </div>
+                                            <div className="text-warning small mb-2">
+                                                {"★".repeat(av.estrelas)}{"☆".repeat(5 - av.estrelas)}
+                                            </div>
+                                            {av.comentario && <p className="text-muted mb-0 fst-italic" style={{fontSize: '0.9rem'}}>"{av.comentario}"</p>}
+                                        </div>
+                                    ))
+                                ) : (
+                                    <div className="text-center py-4 text-muted small border rounded border-secondary border-opacity-10 bg-white shadow-sm">
+                                        Ainda não recebeste nenhuma avaliação escrita.
+                                    </div>
+                                )}
+                            </div>
+                        )}
+                    </div>
+
                 </div>
             </div>
         </div>

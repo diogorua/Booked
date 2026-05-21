@@ -57,6 +57,53 @@ class Compra(models.Model):
     comprador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='compras')
     livro = models.ForeignKey(Book, on_delete=models.CASCADE)
     data_compra = models.DateTimeField(auto_now_add=True)
+    avaliada = models.BooleanField(default=False)
 
     def __str__(self):
         return f"{self.comprador.username} comprou {self.livro.titulo}"
+
+
+class Avaliacao(models.Model):
+    avaliador = models.ForeignKey(User, on_delete=models.CASCADE, related_name='avaliacoes_feitas')
+    avaliado = models.ForeignKey(User, on_delete=models.CASCADE, related_name='avaliacoes_recebidas')
+
+    ESTRELAS_CHOICES = [
+        (1, '1 Estrela'),
+        (2, '2 Estrelas'),
+        (3, '3 Estrelas'),
+        (4, '4 Estrelas'),
+        (5, '5 Estrelas'),
+    ]
+    estrelas = models.IntegerField(choices=ESTRELAS_CHOICES)
+
+    comentario = models.TextField(max_length=500, blank=True, default='')
+
+    data_avaliacao = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"{self.avaliador.username} deu {self.estrelas}★ a {self.avaliado.username}"
+
+
+class Reporte(models.Model):
+    MOTIVOS_CHOICES = [
+        ('Fraude/Burla', 'Fraude/Burla'),
+        ('Conteúdo Impróprio', 'Conteúdo Impróprio'),
+        ('Preço Abusivo', 'Preço Abusivo'),
+        ('Outro motivo', 'Outro motivo'),
+    ]
+
+    denunciante = models.ForeignKey(User, on_delete=models.CASCADE, related_name='reportes_enviados')
+    tipo = models.CharField(max_length=20, choices=[('livro', 'Livro'), ('perfil', 'Perfil')])
+
+    # Guardamos o ID e o nome como texto para o Admin conseguir ler o histórico
+    # mesmo que o utilizador ou livro seja apagado da plataforma
+    alvo_id = models.IntegerField()
+    alvo_nome = models.CharField(max_length=200)  # Título do livro ou @username
+
+    motivo = models.CharField(max_length=50, choices=MOTIVOS_CHOICES)
+    descricao = models.TextField(max_length=500, blank=True, default='')
+    data_criacao = models.DateTimeField(auto_now_add=True)
+    resolvido = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f"[{self.tipo.upper()}] Queixa de {self.denunciante.username} contra {self.alvo_nome}"

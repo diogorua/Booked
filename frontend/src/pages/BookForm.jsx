@@ -55,21 +55,26 @@ export default function BookForm() {
         Object.keys(formData).forEach(key => data.append(key, formData[key]));
         if (imagemNova) data.append("imagem_capa", imagemNova);
 
-        try {
-            const config = {
-                withCredentials: true,
-                headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'multipart/form-data' }
-            };
+        const config = {
+            withCredentials: true,
+            headers: { 'X-CSRFToken': getCSRFToken(), 'Content-Type': 'multipart/form-data' }
+        };
 
-            if (id) {
-                await axios.put(`${BASE_URL}/books/${id}/`, data, config);
-                alert("Anúncio atualizado!");
-            } else {
-                await axios.post(`${BASE_URL}/books/`, data, config);
-                alert("Anúncio criado!");
-            }
-            navigate("/bookshelf");
-        } catch (err) { alert("Erro ao guardar o livro."); }
+        if (id) {
+            axios.put(`${BASE_URL}/books/${id}/`, data, config)
+                .then(() => {
+                    alert("Anúncio atualizado!");
+                    navigate("/bookshelf");
+                })
+                .catch(() => alert("Erro ao guardar o livro."));
+        } else {
+            axios.post(`${BASE_URL}/books/`, data, config)
+                .then(() => {
+                    alert("Anúncio criado!");
+                    navigate("/bookshelf");
+                })
+                .catch(() => alert("Erro ao guardar o livro."));
+        }
     };
 
     return (

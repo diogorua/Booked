@@ -37,7 +37,8 @@ const LoginManager = () => {
             .then(() => {
                 setUser(null);
                 setIsDropdownOpen(false);
-                navigate('/');
+                alert("Logout efetuado com sucesso!");
+                window.location.href = '/';
             })
             .catch(() => console.log('Logout failed'));
     };
@@ -94,6 +95,15 @@ const LoginManager = () => {
                             >
                                 Lista de favoritos
                             </button>
+
+                            {user.role === 'Admin' && (
+                                <button
+                                    className="dropdown-item py-2 fw-bold"
+                                    onClick={() => { setIsDropdownOpen(false); navigate('/admin-dashboard'); }}
+                                >
+                                    Admin Dashboard
+                                </button>
+                            )}
 
                             <div className="dropdown-divider border-secondary opacity-25"></div>
 

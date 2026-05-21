@@ -17,31 +17,27 @@ export default function Favoritos() {
     const [favoritos, setFavoritos] = useState([]);
 
     useEffect(() => {
-        if (!user) {
-            navigate("/login");
-            return;
-        }
-
         // Pede ao Django a lista de favoritos
         axios.get(`${BASE_URL}/favorites/`, { withCredentials: true })
             .then(res => setFavoritos(res.data))
-            .catch(err => console.error("Erro ao carregar favoritos", err));
-    }, [user, navigate]);
+            .catch(err => navigate("/login"));
+    }, [navigate]);
 
     // Função para remover da página de favoritos instantaneamente
-    const removerFavorito = async (livroId) => {
-        try {
-            await axios.post(`${BASE_URL}/favorites/`, { book_id: livroId }, {
-                withCredentials: true,
-                headers: { 'X-CSRFToken': getCSRFToken() }
-            });
+    const removeFavorite = (livroId) => {
+        axios.post(`${BASE_URL}/favorites/`, { book_id: livroId }, {
+            withCredentials: true,
+            headers: { 'X-CSRFToken': getCSRFToken() }
+        })
+        .then(() => {
             setFavoritos(favoritos.filter(livro => livro.id !== livroId));
-        } catch (error) {
+        })
+        .catch(error => {
             console.error("Erro ao remover favorito:", error);
-        }
+        });
     };
 
-    if (!user) return null;
+    if (!user) return <div className="container mt-5 text-center"><div className="spinner-border" style={{color: "var(--dark-brown)"}}/></div>;
 
     return (
         <div className="container mt-5 mb-5">
@@ -61,7 +57,7 @@ export default function Favoritos() {
                                         color: "#dc3545",
                                         transition: "transform 0.2s ease-in-out"
                                     }}
-                                    onClick={() => removerFavorito(livro.id)}
+                                    onClick={() => removeFavorite(livro.id)}
                                     title="Remover dos favoritos"
                                     onMouseDown={(e) => e.currentTarget.style.transform = "scale(0.8)"}
                                     onMouseUp={(e) => e.currentTarget.style.transform = "scale(1)"}

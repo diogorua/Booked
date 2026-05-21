@@ -16,6 +16,7 @@ import BookShelf from "./pages//BookShelf.jsx"
 import Favorites from "./pages//Favorites.jsx"
 import BookDetail from "./pages/BookDetail";
 import PublicProfile from "./pages/PublicProfile";
+import AdminDashboard from "./pages/AdminDashboard";
 
 createRoot(document.getElementById('root')).render(
     <UserProvider>
@@ -33,7 +34,7 @@ createRoot(document.getElementById('root')).render(
                     <Route path="/favorites" element={<Favorites />} />
                     <Route path="/livro/:id" element={<BookDetail />} />
                     <Route path="/profile/:username" element={<PublicProfile />} />
-
+                    <Route path="/admin-dashboard" element={<AdminDashboard />} />
                 </Routes>
             </main>
             <Footer />

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useUserContext } from "../context/UserProvider";
+import PurchaseTab from "../components/PurchaseTab.jsx";
 
 const BASE_URL = "http://localhost:8000/booked/api";
 
@@ -11,67 +12,6 @@ const getCSRFToken = () => {
         ?.split('=')[1];
 }
 
-function ComprasTab() {
-    const [compras, setCompras] = useState([]);
-    const navigate = useNavigate();
-
-    useEffect(() => {
-        axios.get(`${BASE_URL}/my-purchases/`, { withCredentials: true })
-            .then(res => setCompras(res.data))
-            .catch(err => console.error("Erro ao carregar compras", err));
-    }, []);
-
-    return (
-        <div>
-            <div className="d-flex justify-content-between align-items-center mb-4">
-                <h5 className="fw-bold text-dark">Os teus livros comprados</h5>
-            </div>
-
-            <div className="row g-4">
-                {compras.length > 0 ? (
-                    compras.map(compra => (
-                        <div className="col-md-4 col-lg-3" key={compra.id}>
-                            <div className="card h-100 shadow-sm border-0">
-                                {compra.livro.imagem_capa ? (
-                                    <img
-                                        src={compra.livro.imagem_capa}
-                                        className="card-img-top"
-                                        alt={compra.livro.titulo}
-                                        style={{ height: "250px", objectFit: "cover" }}
-                                    />
-                                ) : (
-                                    <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: "250px" }}>
-                                        <span className="text-muted small">Sem capa</span>
-                                    </div>
-                                )}
-                                <div className="card-body d-flex flex-column" style={{ backgroundColor: "white" }}>
-                                    <h6 className="card-title fw-bold text-truncate mb-1">{compra.livro.titulo}</h6>
-                                    <p className="text-muted small mb-1">{compra.livro.autor}</p>
-                                    <p className="text-muted small mb-1">{compra.livro.preco}€ • {compra.livro.estado_conservacao}</p>
-                                    <p className="text-muted small mb-3">Comprado em: {compra.data_compra}</p>
-
-                                    <div className="mt-auto">
-                                        <button
-                                            className="btn btn-sm btn-dark w-100 fw-medium"
-                                            onClick={() => navigate(`/livro/${compra.livro.id}`)}
-                                        >
-                                            Ver Detalhes
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    ))
-                ) : (
-                    <div className="col-12 text-center py-5 bg-white shadow-sm rounded">
-                        <p className="text-muted mb-0">Ainda não fizeste nenhuma compra.</p>
-                    </div>
-                )}
-            </div>
-        </div>
-    );
-}
-
 export default function BookShelf() {
     const { user } = useUserContext();
     const navigate = useNavigate();
@@ -79,30 +19,29 @@ export default function BookShelf() {
     const [meusLivros, setMeusLivros] = useState([]);
     const [activeTab, setActiveTab] = useState("anuncios");
 
-    const handleEliminar = async (livroId) => {
+    const handleDelete = (livroId) => {
         if (window.confirm("Eliminar este anúncio permanentemente?")) {
-            try {
-                await axios.delete(`${BASE_URL}/books/${livroId}/`, {
-                    withCredentials: true,
-                    headers: { 'X-CSRFToken': getCSRFToken() }
-                });
+            axios.delete(`${BASE_URL}/books/${livroId}/`, {
+                withCredentials: true,
+                headers: { 'X-CSRFToken': getCSRFToken() }
+            })
+            .then(() => {
                 setMeusLivros(meusLivros.filter(l => l.id !== livroId));
-            } catch (err) { alert("Não foi possível eliminar."); }
+            })
+            .catch(() => alert("Não foi possível eliminar."));
         }
     };
 
     useEffect(() => {
-        if (!user) {
-            navigate("/login");
-            return;
-        }
-
         axios.get(`${BASE_URL}/my-books/`, { withCredentials: true })
-            .then(res => setMeusLivros(res.data))
-            .catch(err => console.error("Erro ao carregar livros", err));
-    }, [user, navigate]);
+            .then(res => {
+                const livrosAtivos = res.data.filter(livro => !livro.vendido);
+                setMeusLivros(livrosAtivos);
+            })
+            .catch(err => navigate("/login"));
+    }, [navigate]);
 
-    if (!user) return null;
+    if (!user) return <div className="container mt-5 text-center"><div className="spinner-border" style={{color: "var(--dark-brown)"}}/></div>;
 
     return (
         <div className="container mt-5 mb-5">
@@ -147,12 +86,7 @@ export default function BookShelf() {
                                 <div className="col-md-4 col-lg-3" key={livro.id}>
                                     <div className="card h-100 shadow-sm border-0">
                                         {livro.imagem_capa ? (
-                                            <img
-                                                src={livro.imagem_capa}
-                                                className="card-img-top"
-                                                alt={livro.titulo}
-                                                style={{ height: "250px", objectFit: "cover" }}
-                                            />
+                                            <img src={livro.imagem_capa} className="card-img-top" alt={livro.titulo} style={{ height: "250px", objectFit: "cover" }} />
                                         ) : (
                                             <div className="card-img-top bg-light d-flex align-items-center justify-content-center" style={{ height: "250px" }}>
                                                 <span className="text-muted small">Sem capa</span>
@@ -165,7 +99,7 @@ export default function BookShelf() {
 
                                             <div className="mt-auto d-flex gap-2">
                                                 <button className="btn btn-sm btn-dark w-100 fw-medium" onClick={() => navigate(`/editbook/${livro.id}`)}>Editar</button>
-                                                <button className="btn btn-sm btn-outline-danger w-100 fw-medium" onClick={() => handleEliminar(livro.id)}>Eliminar</button>
+                                                <button className="btn btn-sm btn-outline-danger w-100 fw-medium" onClick={() => handleDelete(livro.id)}>Eliminar</button>
                                             </div>
                                         </div>
                                     </div>
@@ -180,7 +114,7 @@ export default function BookShelf() {
                 </div>
             )}
 
-            {activeTab === 'compras' && <ComprasTab />}
+            {activeTab === 'compras' && <PurchaseTab />}
         </div>
     );
 }

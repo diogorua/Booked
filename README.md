@@ -31,8 +31,10 @@ de comandos que possibilita diferentes interações com o projeto.
 - **public**: pasta para ficheiros estáticos, ou seja, o que for colocado aqui
 será usado diretamente pelo servidor web exatamente como está, como, por exemplo, fotos.
 - src
+  - **pages**: contém todas as páginas do nosso projeto 
   - **assets**: guarda ficheiros estáticos que vão ser importados diretamente (JavaScript/CSS).
   - **components**: guardamos os componentes UI reutilizáveis em toda a aplicação.
+  - **context**: dedicado ao contexto do utilizador
 - **main.jsx**: entry point 
 
 ## Configuração do Backend (dentro da diretoria backend):
@@ -53,8 +55,10 @@ Instalação do cloudinary
 - `pip install cloudinary django-cloudinary-storage`
 
 Instalação da biblioteca pillow
-
 - `pip install Pillow`
+
+Instalação da biblioteca dotenv
+- `pip install python-dotenv`
 
 Este comando instala a djangorestframework, uma biblioteca para desenvolver aplicações
 web REST num projeto Django. É também instalada no projeto a biblioteca django-corsheaders, que permite 
