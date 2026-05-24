@@ -102,7 +102,7 @@ adicionais no frontend:
 
 
 - As bibliotecas bootstrap e reactstrap serão usadas para a apresentação gráfica (contêm
-vários estilos e componentes já definidos que iremos usar).
+vários estilos e componentes já definidos que iremos usar). No nosso projeto, apesar da instalação destas dependências, apensas usamos o bootstrap e o axios.
 
 
 - A biblioteca axios é muito importante no contexto de integração frontend/backend, dado
@@ -111,9 +111,9 @@ com o backend.
 
 
 - A biblioteca moment será usada por alguns componentes para possibilitar uma
-manipulação simplificada do formato das datas e horas.
+manipulação simplificada do formato das datas e horas, não aplicável no nosso projeto, uma vez que a formatação das datas está a ser processada no backend.
 
-Esta linha de comando é o ponto de partida para transformar uma aplicação SPA 
+Esta seguinte linha de comando é o ponto de partida para transformar uma aplicação SPA 
 em algo que realmente parece um site com várias páginas. O React Router permite que exibir 
 diferentes componentes (páginas) baseando-se na URL atual do navegador.
 
