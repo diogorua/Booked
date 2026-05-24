@@ -106,7 +106,7 @@ export default function BookForm() {
                         <select className="form-select" value={formData.estado_conservacao} onChange={e => setFormData({...formData, estado_conservacao: e.target.value})}>
                             <option value="Novo">Novo</option>
                             <option value="Usado">Usado</option>
-                            <option value="Usado">Muito Usado</option>
+                            <option value="Muito Usado">Muito Usado</option>
                         </select>
                     </div>
                 </div>

@@ -28,6 +28,7 @@ const Profile = () => {
     const [previewUrl, setPreviewUrl] = useState('');
     const [biografia, setBiografia] = useState('');
     const [distrito, setDistrito] = useState('');
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
 
     const LoadProfile = () => {
         axios.get(PROFILE_URL, {withCredentials: true})
@@ -39,24 +40,45 @@ const Profile = () => {
             .catch(err => console.error('Erro ao carregar perfil:', err));
     };
 
-    // --- NOVA FUNÇÃO: EXECUTAR UPGRADE PARA PREMIUM ---
     const handleUpgrade = () => {
-        axios.put(PROFILE_URL, { plano: 'Premium' }, {
+        axios.put(PROFILE_URL, {plano: 'Premium'}, {
             withCredentials: true,
             headers: {'X-CSRFToken': getCSRFToken()}
         })
-        .then(() => {
-            carregarPerfil();
-            return axios.get('http://localhost:8000/booked/api/user/', { withCredentials: true });
+            .then(() => {
+                setShowUpgradeModal(false);
+                LoadProfile();
+                return axios.get('http://localhost:8000/booked/api/user/', {withCredentials: true});
+            })
+            .then(resUser => {
+                setUser(resUser.data);
+                alert("Parabéns! A tua conta foi atualizada para Premium com sucesso! 💎");
+            })
+            .catch(error => {
+                console.error("Erro ao fazer upgrade:", error);
+                alert("Não foi possível processar o upgrade.");
+            });
+    };
+
+    const handleDowngrade = () => {
+        if (!window.confirm("Tens a certeza que queres cancelar o plano Premium e voltar ao plano Base?")) return;
+
+        axios.put(PROFILE_URL, {plano: 'Base'}, {
+            withCredentials: true,
+            headers: {'X-CSRFToken': getCSRFToken()}
         })
-        .then(resUser => {
-            setUser(resUser.data);
-            alert("Parabéns! A tua conta foi atualizada para Premium com sucesso! 💎");
-        })
-        .catch(error => {
-            console.error("Erro ao fazer upgrade:", error);
-            alert("Não foi possível processar o upgrade.");
-        });
+            .then(() => {
+                LoadProfile();
+                return axios.get('http://localhost:8000/booked/api/user/', {withCredentials: true});
+            })
+            .then(resUser => {
+                setUser(resUser.data);
+                alert("O teu plano foi revertido para Base.");
+            })
+            .catch(error => {
+                console.error("Erro ao cancelar premium:", error);
+                alert("Não foi possível cancelar o plano Premium.");
+            });
     };
 
     useEffect(() => {
@@ -293,45 +315,69 @@ const Profile = () => {
                                            style={{fontSize: '0.75rem', letterSpacing: '0.5px'}}>
                                         {user.role === 'Admin' ? 'Tipo de Conta' : 'Plano Subscrito'}
                                     </label>
-                                    <div className="fs-6 text-dark fw-medium">
-                                        {user.role === 'Admin' ? 'Administrador' : user.plano}
+                                    <div className="d-flex align-items-center gap-3">
+        <span className="fs-6 text-dark fw-medium">
+            {user.role === 'Admin' ? 'Administrador' : user.plano}
+        </span>
+                                        {user.role !== 'Admin' && user.plano !== 'Premium' && (
+                                            <button
+                                                className="btn btn-sm btn-warning fw-bold rounded-pill px-3"
+                                                style={{fontSize: '0.8rem'}}
+                                                onClick={() => setShowUpgradeModal(true)}
+                                            >
+                                                💎 Upgrade para Premium
+                                            </button>
+                                        )}
+                                        {user.role !== 'Admin' && user.plano === 'Premium' && (
+                                            <button
+                                                className="btn btn-sm btn-outline-danger rounded-pill px-3"
+                                                style={{fontSize: '0.8rem'}}
+                                                onClick={handleDowngrade}
+                                            >
+                                                Cancelar Premium
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>
                         </>
                     )}
 
-                    <div className="mt-5 pt-4 border-top border-secondary border-opacity-25" style={{maxWidth: '600px'}}>
+                    <div className="mt-5 pt-4 border-top border-secondary border-opacity-25"
+                         style={{maxWidth: '600px'}}>
                         <h5 className="fw-bold mb-4 text-dark">As Minhas Avaliações</h5>
 
                         {!(profile?.plano === 'Premium' || user?.role === 'Admin') ? (
                             <div className="p-4 border rounded border-secondary border-opacity-25 bg-light text-center">
                                 <div className="fs-3 mb-2">🔒</div>
                                 <h6 className="fw-bold text-dark mb-2">Acesso Premium</h6>
-                                <p className="text-muted small mb-3">
-                                    Precisas do plano Premium para conseguires ler o feedback escrito detalhado deixado pelos teus compradores.
+                                <p className="text-muted small mb-0">
+                                    Precisas do plano Premium para conseguires ler o feedback escrito detalhado deixado
+                                    pelos teus compradores.
                                 </p>
-                                <button className="btn btn-sm btn-warning fw-bold px-4 rounded-pill shadow-sm" onClick={handleUpgrade}>
-                                    Fazer Upgrade para Premium
-                                </button>
                             </div>
                         ) : (
                             <div className="d-flex flex-column gap-3">
                                 {profile?.avaliacoes && profile.avaliacoes.length > 0 ? (
                                     profile.avaliacoes.map((av) => (
-                                        <div key={av.id} className="p-3 border rounded border-secondary border-opacity-10 bg-white shadow-sm">
+                                        <div key={av.id}
+                                             className="p-3 border rounded border-secondary border-opacity-10 bg-white shadow-sm">
                                             <div className="d-flex justify-content-between align-items-center mb-2">
-                                                <span className="fw-bold text-dark" style={{fontSize: '0.9rem'}}>@{av.avaliador_name}</span>
-                                                <span className="text-muted" style={{fontSize: '0.8rem'}}>{av.data_avaliacao}</span>
+                                                <span className="fw-bold text-dark"
+                                                      style={{fontSize: '0.9rem'}}>@{av.avaliador_name}</span>
+                                                <span className="text-muted"
+                                                      style={{fontSize: '0.8rem'}}>{av.data_avaliacao}</span>
                                             </div>
                                             <div className="text-warning small mb-2">
                                                 {"★".repeat(av.estrelas)}{"☆".repeat(5 - av.estrelas)}
                                             </div>
-                                            {av.comentario && <p className="text-muted mb-0 fst-italic" style={{fontSize: '0.9rem'}}>"{av.comentario}"</p>}
+                                            {av.comentario && <p className="text-muted mb-0 fst-italic"
+                                                                 style={{fontSize: '0.9rem'}}>"{av.comentario}"</p>}
                                         </div>
                                     ))
                                 ) : (
-                                    <div className="text-center py-4 text-muted small border rounded border-secondary border-opacity-10 bg-white shadow-sm">
+                                    <div
+                                        className="text-center py-4 text-muted small border rounded border-secondary border-opacity-10 bg-white shadow-sm">
                                         Ainda não recebeste nenhuma avaliação escrita.
                                     </div>
                                 )}
@@ -341,6 +387,57 @@ const Profile = () => {
 
                 </div>
             </div>
+            {showUpgradeModal && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050}}
+                    onClick={() => setShowUpgradeModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-4 shadow-lg p-5"
+                        style={{maxWidth: '480px', width: '90%'}}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="text-center mb-4">
+                            <div style={{fontSize: '2.5rem'}}>💎</div>
+                            <h4 className="fw-bold mt-2" style={{color: 'var(--dark-brown)'}}>Plano Premium</h4>
+                            <div className="mt-1">
+                                <span className="fs-3 fw-bold text-dark">2,99€</span>
+                                <span className="text-muted">/mês</span>
+                            </div>
+                        </div>
+
+                        <ul className="list-unstyled d-flex flex-column gap-2 mb-4">
+                            {[
+                                'Acesso ao feedback escrito detalhado dos compradores',
+                                'Visualização do rating e histórico completo de avaliações de outros vendedores',
+                                'Badge de destaque nos teus anúncios',
+                                'Destaque nos resultados de pesquisa',
+                            ].map((vantagem, i) => (
+                                <li key={i} className="d-flex align-items-start gap-2" style={{fontSize: '0.92rem'}}>
+                                    <span className="text-warning fw-bold">✓</span>
+                                    <span className="text-muted">{vantagem}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="d-flex gap-2">
+                            <button
+                                className="btn btn-warning fw-bold flex-grow-1 rounded-pill py-2"
+                                onClick={handleUpgrade}
+                            >
+                                Confirmar Upgrade
+                            </button>
+                            <button
+                                className="btn btn-light border rounded-pill px-4 py-2"
+                                onClick={() => setShowUpgradeModal(false)}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 };

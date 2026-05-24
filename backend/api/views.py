@@ -9,6 +9,8 @@ from .models import ClientProfile, Category, Book, Compra, Avaliacao, Reporte
 from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 from .serializers import ClientProfileSerializer, CategorySerializer, BookSerializer, CompraSerializer, AvaliacaoSerializer
 from rest_framework.pagination import PageNumberPagination
+from django.utils import timezone
+from datetime import timedelta
 
 
 @api_view(['POST'])
@@ -453,7 +455,7 @@ def admin_delete_item_view(request, item_type, item_id):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def criar_reporte_view(request):
-    tipo = request.data.get('tipo') # 'livro' ou 'perfil'
+    tipo = request.data.get('tipo')
     alvo_id = request.data.get('alvo_id')
     alvo_nome = request.data.get('alvo_nome')
     motivo = request.data.get('motivo')
@@ -461,6 +463,21 @@ def criar_reporte_view(request):
 
     if not tipo or not alvo_id or not motivo or not alvo_nome:
         return Response({'error': 'Dados incompletos para efetuar denúncia.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # Verifica se já denunciou este alvo nos últimos 30 dias
+    trinta_dias_atras = timezone.now() - timedelta(days=30)
+    reporte_recente = Reporte.objects.filter(
+        denunciante=request.user,
+        tipo=tipo,
+        alvo_id=int(alvo_id),
+        data_criacao__gte=trinta_dias_atras
+    ).exists()
+
+    if reporte_recente:
+        return Response(
+            {'error': 'Já denunciaste este conteúdo recentemente. Só podes submeter uma denúncia a cada 30 dias.'},
+            status=status.HTTP_429_TOO_MANY_REQUESTS
+        )
 
     Reporte.objects.create(
         denunciante=request.user,
@@ -471,7 +488,6 @@ def criar_reporte_view(request):
         descricao=descricao
     )
     return Response({'msg': 'Denúncia registada. A equipa de moderação vai analisar.'}, status=status.HTTP_201_CREATED)
-
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated, IsAdminUser])
