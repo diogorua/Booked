@@ -114,7 +114,7 @@ com o backend.
 manipulação simplificada do formato das datas e horas, não aplicável no nosso projeto, uma vez que a formatação das datas está a ser processada no backend.
 
 Esta seguinte linha de comando é o ponto de partida para transformar uma aplicação SPA 
-em algo que realmente parece um site com várias páginas. O React Router permite que exibir 
+em algo que realmente parece um site com várias páginas. O React Router permite exibir 
 diferentes componentes (páginas) baseando-se na URL atual do navegador.
 
 Como instalar:
