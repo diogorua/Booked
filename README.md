@@ -59,11 +59,17 @@ que o backend Django possa aceitar pedidos vindos do frontend React
 Instalação do cloudinary
 - `pip install cloudinary django-cloudinary-storage`
 
+O Cloudinary é uma plataforma em nuvem para o gerenciamento de mídias (imagens no nosso caso, tanto para as de perfil como para guardar imagens dos livros.
+
 Instalação da biblioteca pillow
 - `pip install Pillow`
 
+É uma biblioteca do Python para processamento, tratamento e manipulação de imagens, útil para as fotos de perfil.
+
 Instalação da biblioteca dotenv
 - `pip install python-dotenv`
+
+O dotenv é uma biblioteca de programação que serve para carregar variáveis de ambiente a partir de um arquivo .env. É essencial para manter dados sensíveis seguros, no nosso caso, as credenciais do cloudinary.
 
 ### Base de Dados
 
