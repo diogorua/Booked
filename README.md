@@ -51,6 +51,11 @@ Criação da app api:
 Instalação de bibliotecas:
 - `pip install djangorestframework django-cors-headers`
 
+Este comando instala a djangorestframework, uma biblioteca para desenvolver aplicações
+web REST num projeto Django. É também instalada no projeto a biblioteca django-corsheaders, que permite 
+associar Cross-Origin Resource Sharing (CORS) aos pedidos HTTP, para
+que o backend Django possa aceitar pedidos vindos do frontend React
+
 Instalação do cloudinary
 - `pip install cloudinary django-cloudinary-storage`
 
@@ -59,11 +64,6 @@ Instalação da biblioteca pillow
 
 Instalação da biblioteca dotenv
 - `pip install python-dotenv`
-
-Este comando instala a djangorestframework, uma biblioteca para desenvolver aplicações
-web REST num projeto Django. É também instalada no projeto a biblioteca django-corsheaders, que permite 
-associar Cross-Origin Resource Sharing (CORS) aos pedidos HTTP, para
-que o backend Django possa aceitar pedidos vindos do frontend React
 
 ### Base de Dados
 
