@@ -49,7 +49,7 @@ export default function BookForm() {
         }
     }, [id, user, navigate]);
 
-    const handleSubmit = async (e) => {
+    const handleSubmit = (e) => {
         e.preventDefault();
         const data = new FormData();
         Object.keys(formData).forEach(key => data.append(key, formData[key]));

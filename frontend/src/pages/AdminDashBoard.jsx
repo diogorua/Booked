@@ -121,7 +121,6 @@ export default function AdminDashboard() {
                 </li>
             </ul>
 
-            {/* ESTATÍSTICAS */}
             {activeTab === 'estatisticas' && (
                 <div>
                     <div className="row g-4 mb-4">
@@ -166,7 +165,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* DENÚNCIAS */}
             {activeTab === 'denuncias' && (
                 <div className="card border-0 shadow-sm bg-white p-4">
                     <h5 className="fw-bold mb-4 text-dark text-danger">Denúncias por Analisar</h5>
@@ -208,7 +206,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* MODERAÇÃO DE LIVROS */}
             {activeTab === 'moderacao' && (
                 <div className="card border-0 shadow-sm bg-white p-4">
                     <h5 className="fw-bold mb-4 text-dark">Fiscalização de Anúncios</h5>
@@ -236,7 +233,6 @@ export default function AdminDashboard() {
                 </div>
             )}
 
-            {/* GESTÃO DE UTILIZADORES */}
             {activeTab === 'utilizadores' && (
                 <div className="card border-0 shadow-sm bg-white p-4">
                     <h5 className="fw-bold mb-4 text-dark">Controlo de Contas</h5>

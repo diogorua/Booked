@@ -20,6 +20,8 @@ export default function PublicProfile() {
     const [erro, setErro] = useState(false);
     const [activeTab, setActiveTab] = useState("livros");
 
+    const [showUpgradeModal, setShowUpgradeModal] = useState(false);
+
     // Estados do Reporte
     const [showReportModal, setShowReportModal] = useState(false);
     const [motivoReport, setMotivoReport] = useState("Fraude/Burla");
@@ -35,18 +37,28 @@ export default function PublicProfile() {
         LoadPublicProfile();
     }, [username]);
 
-    const handleUpgrade = async () => {
+    const openModalPremium = () => {
+        if (!user) {
+            alert("Precisas de iniciar sessão ou criar conta para aderires ao plano Premium!");
+            navigate('/login');
+            return;
+        }
+        setShowUpgradeModal(true);
+    };
+
+    const handleUpgrade = () => {
         axios.put(`${BASE_URL}/profile/`, {plano: 'Premium'}, {
             withCredentials: true,
             headers: {'X-CSRFToken': getCSRFToken()}
         })
-            .then(() => axios.get(`${BASE_URL}/user/`, {withCredentials: true}))
-            .then(resUser => {
-                setUser(resUser.data);
-                LoadPublicProfile();
-                alert("Upgrade concluído! Já tens acesso total às opiniões dos compradores.");
-            })
-            .catch(() => alert("Não foi possível processar o upgrade."));
+        .then(() => axios.get(`${BASE_URL}/user/`, {withCredentials: true}))
+        .then(resUser => {
+            setUser(resUser.data);
+            LoadPublicProfile();
+            setShowUpgradeModal(false);
+            alert("Upgrade concluído! Já tens acesso total às opiniões dos compradores.");
+        })
+        .catch(() => alert("Não foi possível processar o upgrade."));
     };
 
     const sendReportProfile = (e) => {
@@ -62,14 +74,14 @@ export default function PublicProfile() {
             withCredentials: true,
             headers: {'X-CSRFToken': getCSRFToken()}
         })
-            .then(() => {
-                alert("Perfil denunciado com sucesso.");
-                setShowReportModal(false);
-                setDescricaoReport("");
-            })
-            .catch(err => {
-                alert(err.response?.data?.error || "Erro ao submeter denúncia.");
-            });
+        .then(() => {
+            alert("Perfil denunciado com sucesso.");
+            setShowReportModal(false);
+            setDescricaoReport("");
+        })
+        .catch(err => {
+            alert(err.response?.data?.error || "Erro ao submeter denúncia.");
+        });
     };
 
     if (erro) return <div className="container mt-5 text-center"><h4 className="text-muted">Utilizador não
@@ -124,7 +136,6 @@ export default function PublicProfile() {
                         <p className="small mb-0 fw-medium">📍 {perfil.distrito || "Não definido"} • 📅 Membro
                             desde {perfil.date_joined}</p>
 
-                        {/* BOTÃO DE REPORTAR USER */}
                         {user && perfil.username !== user.username && (
                             <button
                                 className="btn btn-link text-danger text-decoration-none p-0 mt-2 small fw-medium d-block"
@@ -207,14 +218,13 @@ export default function PublicProfile() {
 
                     {!perfil.is_premium_viewer && user?.role !== 'Admin' ? (
                         <div className="text-center py-5 border rounded bg-light bg-opacity-50">
-                            <div className="fs-1 mb-3">🔒</div>
                             <h5 className="fw-bold text-dark">Acesso Exclusivo Premium</h5>
                             <p className="text-muted mb-4 mx-auto" style={{maxWidth: "450px"}}>
                                 Atualiza o teu plano para leres as opiniões detalhadas de outros compradores e
                                 garantires negócios mais seguros.
                             </p>
                             <button className="btn btn-warning fw-bold px-4 rounded-pill shadow"
-                                    onClick={handleUpgrade}>
+                                    onClick={openModalPremium}>
                                 Fazer Upgrade para Premium
                             </button>
                         </div>
@@ -248,7 +258,57 @@ export default function PublicProfile() {
                 </div>
             )}
 
-            {/* MODAL DE REPORTAR USER */}
+            {showUpgradeModal && (
+                <div
+                    className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
+                    style={{backgroundColor: 'rgba(0,0,0,0.5)', zIndex: 1050}}
+                    onClick={() => setShowUpgradeModal(false)}
+                >
+                    <div
+                        className="bg-white rounded-4 shadow-lg p-5"
+                        style={{maxWidth: '480px', width: '90%'}}
+                        onClick={e => e.stopPropagation()}
+                    >
+                        <div className="text-center mb-4">
+                            <h4 className="fw-bold mt-2" style={{color: 'var(--dark-brown)'}}>Plano Premium</h4>
+                            <div className="mt-1">
+                                <span className="fs-3 fw-bold text-dark">2,99€</span>
+                                <span className="text-muted">/mês</span>
+                            </div>
+                        </div>
+
+                        <ul className="list-unstyled d-flex flex-column gap-2 mb-4">
+                            {[
+                                'Acesso ao feedback escrito detalhado dos compradores',
+                                'Visualização do rating e histórico completo de avaliações de outros vendedores',
+                                'Badge de destaque nos teus anúncios',
+                                'Destaque nos resultados de pesquisa',
+                            ].map((vantagem, i) => (
+                                <li key={i} className="d-flex align-items-start gap-2" style={{fontSize: '0.92rem'}}>
+                                    <span className="text-warning fw-bold">✓</span>
+                                    <span className="text-muted">{vantagem}</span>
+                                </li>
+                            ))}
+                        </ul>
+
+                        <div className="d-flex gap-2">
+                            <button
+                                className="btn btn-warning fw-bold flex-grow-1 rounded-pill py-2"
+                                onClick={handleUpgrade}
+                            >
+                                Confirmar Upgrade
+                            </button>
+                            <button
+                                className="btn btn-light border rounded-pill px-4 py-2"
+                                onClick={() => setShowUpgradeModal(false)}
+                            >
+                                Cancelar
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            )}
+
             {showReportModal && (
                 <div className="modal show d-block" style={{backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050}}>
                     <div className="modal-dialog modal-dialog-centered">

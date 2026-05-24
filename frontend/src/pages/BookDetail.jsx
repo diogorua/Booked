@@ -71,7 +71,7 @@ export default function BookDetail() {
         }
     };
 
-    const sendReport = async (e) => {
+    const sendReport = (e) => {
         e.preventDefault();
 
         axios.post(`${BASE_URL}/reports/`, {
@@ -202,7 +202,6 @@ export default function BookDetail() {
                 </div>
             )}
 
-            {/* MODAL DE REPORTAR LIVRO */}
             {showReportModal && (
                 <div className="modal show d-block" style={{backgroundColor: "rgba(0,0,0,0.5)", zIndex: 1050}}>
                     <div className="modal-dialog modal-dialog-centered">

@@ -18,7 +18,6 @@ const DISTRITOS = [
 ];
 
 const Profile = () => {
-    // Injetado o setUser aqui para atualizar o estado global do site
     const {user, setUser} = useUserContext();
     const [profile, setProfile] = useState(null);
     const navigate = useNavigate();
@@ -45,19 +44,19 @@ const Profile = () => {
             withCredentials: true,
             headers: {'X-CSRFToken': getCSRFToken()}
         })
-            .then(() => {
-                setShowUpgradeModal(false);
-                LoadProfile();
-                return axios.get('http://localhost:8000/booked/api/user/', {withCredentials: true});
-            })
-            .then(resUser => {
-                setUser(resUser.data);
-                alert("Parabéns! A tua conta foi atualizada para Premium com sucesso! 💎");
-            })
-            .catch(error => {
-                console.error("Erro ao fazer upgrade:", error);
-                alert("Não foi possível processar o upgrade.");
-            });
+        .then(() => {
+            setShowUpgradeModal(false);
+            LoadProfile();
+            return axios.get('http://localhost:8000/booked/api/user/', {withCredentials: true});
+        })
+        .then(resUser => {
+            setUser(resUser.data);
+            alert("Parabéns! A tua conta foi atualizada para Premium com sucesso!");
+        })
+        .catch(error => {
+            console.error("Erro ao fazer upgrade:", error);
+            alert("Não foi possível processar o upgrade.");
+        });
     };
 
     const handleDowngrade = () => {
@@ -105,26 +104,27 @@ const Profile = () => {
         }
     };
 
-    const handleSave = async (e) => {
+    const handleSave = (e) => {
         e.preventDefault();
         const formData = new FormData();
         if (imageFile) formData.append('imagem', imageFile);
         formData.append('biografia', biografia);
         formData.append('distrito', distrito);
 
-        try {
-            await axios.put(PROFILE_URL, formData, {
-                withCredentials: true,
-                headers: {'X-CSRFToken': getCSRFToken(), 'Content-Type': 'multipart/form-data'}
-            });
+        axios.put(PROFILE_URL, formData, {
+            withCredentials: true,
+            headers: {'X-CSRFToken': getCSRFToken(), 'Content-Type': 'multipart/form-data'}
+        })
+        .then(() => {
             setIsEditing(false);
             setImageFile(null);
             setPreviewUrl('');
             LoadProfile();
-        } catch (error) {
+        })
+        .catch((error) => {
             console.error("Erro ao atualizar perfil:", error);
             alert("Erro ao atualizar o perfil.");
-        }
+        });
     };
 
     const cancelEdition = () => {
@@ -137,6 +137,7 @@ const Profile = () => {
         ? previewUrl
         : (profile?.imagem && !profile.imagem.includes('default.png')
             ? profile.imagem
+            // Link da imagem default de perfil que está guardada no Cloudinary
             : 'https://res.cloudinary.com/dub0qps5u/image/upload/v1778581892/default_nmibr3.png');
 
     return (
@@ -325,7 +326,7 @@ const Profile = () => {
                                                 style={{fontSize: '0.8rem'}}
                                                 onClick={() => setShowUpgradeModal(true)}
                                             >
-                                                💎 Upgrade para Premium
+                                                Upgrade para Premium
                                             </button>
                                         )}
                                         {user.role !== 'Admin' && user.plano === 'Premium' && (
@@ -349,7 +350,6 @@ const Profile = () => {
 
                         {!(profile?.plano === 'Premium' || user?.role === 'Admin') ? (
                             <div className="p-4 border rounded border-secondary border-opacity-25 bg-light text-center">
-                                <div className="fs-3 mb-2">🔒</div>
                                 <h6 className="fw-bold text-dark mb-2">Acesso Premium</h6>
                                 <p className="text-muted small mb-0">
                                     Precisas do plano Premium para conseguires ler o feedback escrito detalhado deixado
@@ -387,6 +387,7 @@ const Profile = () => {
 
                 </div>
             </div>
+
             {showUpgradeModal && (
                 <div
                     className="position-fixed top-0 start-0 w-100 h-100 d-flex align-items-center justify-content-center"
@@ -399,7 +400,6 @@ const Profile = () => {
                         onClick={e => e.stopPropagation()}
                     >
                         <div className="text-center mb-4">
-                            <div style={{fontSize: '2.5rem'}}>💎</div>
                             <h4 className="fw-bold mt-2" style={{color: 'var(--dark-brown)'}}>Plano Premium</h4>
                             <div className="mt-1">
                                 <span className="fs-3 fw-bold text-dark">2,99€</span>

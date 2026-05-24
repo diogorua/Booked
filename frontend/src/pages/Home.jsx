@@ -29,9 +29,9 @@ export default function Home() {
 
         const params = new URLSearchParams();
         params.append('page', pagina);
-        if (pesquisa)            params.append('search', pesquisa);
+        if (pesquisa) params.append('search', pesquisa);
         if (categoriaSelecionada) params.append('categoria', categoriaSelecionada);
-        if (estadoSelecionado)   params.append('estado', estadoSelecionado);
+        if (estadoSelecionado) params.append('estado', estadoSelecionado);
 
         axios.get(`${BASE_URL}/books/?${params.toString()}`, { withCredentials: true })
             .then(res => {
